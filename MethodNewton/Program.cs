@@ -6,7 +6,9 @@ class Program
 {
     static void Main(string[] args)
     {
-        ExcelReader excelReader = new ExcelReader("Data.xlsx");
+        string fileName = "Data.xlsx";
+        string dataPath = "../data/" + fileName;
+        ExcelReader excelReader = new ExcelReader(dataPath);
         List<double> xList;
         List<double> yList;
         (xList, yList) = excelReader.ExcelFileRead();
