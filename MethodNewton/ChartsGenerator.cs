@@ -6,6 +6,7 @@ using MathNet.Numerics.LinearAlgebra;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
+using OxyPlot.Legends;
 using OxyPlot.SkiaSharp;
 
 namespace MethodNewton
@@ -26,8 +27,19 @@ namespace MethodNewton
                 DefaultFont = "Arial",
                 Background = OxyColors.WhiteSmoke,
                 PlotAreaBackground = OxyColors.White,
-                PlotAreaBorderColor = OxyColors.Black
+                PlotAreaBorderColor = OxyColors.Black,
+
             };
+
+            plotModel.Legends.Add(new Legend
+            {
+                LegendPosition = LegendPosition.LeftTop,
+                LegendBackground = OxyColor.FromArgb(200, 255, 255, 255),
+                LegendBorder = OxyColors.Black,
+                LegendBorderThickness = 1,
+                LegendFontSize = 12,
+                LegendPlacement = LegendPlacement.Inside
+            });
 
             var pointsSeries = new LineSeries
             {
@@ -74,6 +86,7 @@ namespace MethodNewton
             plotModel.Axes.Add(new LinearAxis
             {
                 Position = AxisPosition.Left,
+                Minimum = 0,
                 Title = "Y",
                 TitleFontSize = 12
             });
