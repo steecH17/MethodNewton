@@ -1,6 +1,7 @@
 ﻿using MethodNewton;
 using System;
 using MathNet.Numerics.LinearAlgebra;
+using Aspose.Cells.Drawing.Equations;
 
 class Program
 {
@@ -9,24 +10,25 @@ class Program
         string fileName = "Data.xlsx";
         string dataPath = "../data/" + fileName;
         ExcelReader excelReader = new ExcelReader(dataPath);
-        List<double> xList;
-        List<double> yList;
-        (xList, yList) = excelReader.ExcelFileRead();
+        List<double> xList = new List<double>();
+        List<double> yList = new List<double>();
+        List<double> xData;
+        List<double> yData;
+        (xData, yData) = excelReader.ExcelFileRead();
 
-        for (int i = 0; i < xList.Count; i++)
+        for (int i = 0; i < xData.Count; i++)
         {
             //функция не определена при x = 0
-            if (xList[i] == 0d)
+            if (xData[i] != 0d)
             {
-                xList.RemoveAt(i);
-                yList.RemoveAt(i);
+                xList.Add(xData[i]);
+                yList.Add(yData[i]);
             }
         }
-
         // Параметры метода
-        double tolerance = 1e-9;
+        double tolerance = 1e-6;
         int maxIterations = 1000;
-        Vector<double> initGuess = Vector<double>.Build.Dense(new double[] { 1.0, 0.1, 1.0 });
+        Vector<double> initGuess = Vector<double>.Build.Dense(new double[] { 1.0, 1.0, 1.0 });
         Vector<double> coef = MethodNewtons.Newton(xList.ToArray(), yList.ToArray(), initGuess, tolerance, maxIterations);
 
         string sign = coef[2] >=0 ? "+" : "-";
@@ -42,6 +44,8 @@ class Program
 
         
         Console.WriteLine($"Коэффициент детерминации : {Math.Round(MethodNewtons.DeterminationCoeff(xList.ToArray(), yList.ToArray(), coef), 5)}");
+
+        ChartsGenerator.PlotAndSave(xData, yData, coef);
     }
     
 }

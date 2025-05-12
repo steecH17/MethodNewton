@@ -23,8 +23,8 @@ namespace MethodNewton
         {
             double sumSquareResiduals = 0;
 
-            for(int i = 0; i< x.Length; i++) sumSquareResiduals += Math.Pow(Residuals(x[i], a, y[i]), 2);
-            
+            for (int i = 0; i < x.Length; i++) sumSquareResiduals += Math.Pow(y[i] - Function(x[i], a[0], a[1], a[2]), 2);
+
             return sumSquareResiduals;
         }
 
@@ -32,9 +32,9 @@ namespace MethodNewton
         {
             double sumSquareAverage = 0;
             double yAverage = y.Average();
-            for(int i = 0; i < y.Length; i++)
+            for (int i = 0; i < y.Length; i++)
             {
-                sumSquareAverage+= Math.Pow(y[i] - yAverage, 2);
+                sumSquareAverage += Math.Pow(y[i] - yAverage, 2);
             }
             return sumSquareAverage;
         }
@@ -48,10 +48,27 @@ namespace MethodNewton
             return adjustedRSquared;
         }
 
+        public static double CalculateDeterminationCoefficient(double[] x, double[] y, Vector<double> a)
+        {
+            double ssRes = SumSquareResiduals(x, y, a);
+            double ssTot = SumSquareAverage(y);
+            Console.WriteLine($"ssRes = {SumSquareResiduals(x, y, a)}");
+            Console.WriteLine($"ssTot = {SumSquareAverage(y)}");
+            
+
+            // Избегаем деления на ноль (если все y одинаковы, R² не имеет смысла)
+            if (Math.Abs(ssTot) < 1e-10)
+                return double.NaN;
+
+            return 1.0 - (ssRes / ssTot);
+        }
+
         public static Vector<double> Newton(double[] x, double[] y, Vector<double> a, double tolerance, int maxIterations)
         {
             int n = x.Length;
             int m = a.Count;
+            double eps = 0.001;
+            double determCoef = DeterminationCoeff(x, y, a);
 
             for (int iter = 0; iter < maxIterations; iter++)
             {
@@ -77,16 +94,18 @@ namespace MethodNewton
                 a += deltaA;
 
                 // Проверка на сходимость
-                if (deltaA.L2Norm() < tolerance)
+                if (deltaA.L2Norm() < tolerance && Math.Abs(determCoef - DeterminationCoeff(x, y, a)) < eps)
                 {
                     Console.WriteLine($"Сходимость достигнута на итерации {iter + 1}");
                     break;
                 }
+
+                determCoef = DeterminationCoeff(x, y, a);
             }
 
             return a;
         }
 
-       
+
     }
 }
