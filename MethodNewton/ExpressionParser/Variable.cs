@@ -7,13 +7,13 @@ public class Variable : MathExpression
     {
         Name = name;
     }
-    public override double Evaluate(Dictionary<string, double> variables = null)
+    public override double Evaluate(Dictionary<string, double>? variables = null)
     {
         if (variables != null && variables.ContainsKey(Name))
         {
             return variables[Name];
         }
-        
+
         throw new Exception($"Неизвестная переменная : {Name}");
     }
 }

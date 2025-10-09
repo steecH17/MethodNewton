@@ -11,7 +11,7 @@ public class MathFunction : MathExpression
         Argument = argument;
     }
     
-    public override double Evaluate(Dictionary<string, double> variables = null)
+    public override double Evaluate(Dictionary<string, double>? variables = null)
     {
         double argValue = Argument.Evaluate(variables);
         

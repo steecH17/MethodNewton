@@ -9,7 +9,12 @@ public class MathParser
     private Token CurrentToken => _currentTokenIndex < _tokens.Count ? _tokens[_currentTokenIndex] : new Token(TokenType.EOF);
     private List<string> _variablesName;
     public List<string> VariablesName => _variablesName;
-    
+
+    public MathParser()
+    {
+        _tokens = new List<Token>();
+        _variablesName = new List<string>();
+    }
     public MathExpression Parse(string expression)
     {
         var tokenizer = new Tokenizer(expression);

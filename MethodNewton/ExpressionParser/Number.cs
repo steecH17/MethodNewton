@@ -8,7 +8,7 @@ public class Number : MathExpression
         Value = value;
     }
 
-    public override double Evaluate(Dictionary<string, double> variables = null)
+    public override double Evaluate(Dictionary<string, double>? variables = null)
     {
         return Value;
     }
