@@ -11,7 +11,7 @@ public class UnaryOperation : MathExpression
         Expression = expression;
     }
 
-    public override double Evaluate(Dictionary<string, double> variables = null)
+    public override double Evaluate(Dictionary<string, double>? variables = null)
     {
         double value = Expression.Evaluate(variables);
 

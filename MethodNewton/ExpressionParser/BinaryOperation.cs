@@ -12,7 +12,7 @@ public class BinaryOperation : MathExpression
         Left = left;
         Right = right;
     }
-    public override double Evaluate(Dictionary<string, double> variables = null)
+    public override double Evaluate(Dictionary<string, double>? variables = null)
     {
         double leftValue = Left.Evaluate(variables);
         double rightValue = Right.Evaluate(variables);
