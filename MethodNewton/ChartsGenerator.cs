@@ -11,9 +11,18 @@ using OxyPlot.SkiaSharp;
 
 namespace MethodNewton
 {
-    public static class ChartsGenerator
+    public class ChartsGenerator
     {
-        public static void PlotAndSave(
+        private MathExpression _function;
+        private List<string> _variablesName;
+        public ChartsGenerator(string expression)
+        {
+            MathParser parser = new MathParser();
+            _function = parser.Parse(expression);
+            _variablesName = parser.VariablesName;
+            _variablesName.Remove("x");
+        }
+        public void PlotAndSave(
             List<double> xData,
             List<double> yData,
             Vector<double> coefficients,
@@ -71,7 +80,7 @@ namespace MethodNewton
             for (int i = 0; i <= pointsCount; i++)
             {
                 double x = xMin + (xMax - xMin) * i / pointsCount;
-                double y = Function(x, coefficients[0], coefficients[1], coefficients[2]);
+                double y = Function(x, coefficients);
                 functionSeries.Points.Add(new DataPoint(x, y));
             }
             plotModel.Series.Add(functionSeries);
@@ -94,12 +103,27 @@ namespace MethodNewton
             SavePlot(fileName, plotModel);
         }
 
-        private static double Function(double x, double a, double b, double c)
+        // private double Function(double x, double a, double b, double c)
+        // {
+        //     return Math.Pow(x, a) + b * Math.Sin(x) + c;
+        // }
+
+        private double Function(double x, Vector<double> coeff)
         {
-            return Math.Pow(x, a) + b * Math.Sin(x) + c;
+            Dictionary<string, double> variables = new Dictionary<string, double>
+            {
+                { "x", x }
+            };
+
+            for (int i = 0; i < coeff.Count; i++)
+            {
+                variables.Add(_variablesName[i], coeff[i]);
+            }
+
+            return _function.Evaluate(variables);
         }
 
-        private static void SavePlot(string fileName, PlotModel plotModel)
+        private void SavePlot(string fileName, PlotModel plotModel)
         {
             string directory = Path.Combine(Directory.GetCurrentDirectory(), "result_charts");
             Directory.CreateDirectory(directory);

@@ -40,7 +40,8 @@ class Program
         
         PrintDataTable(solver, coef, xList, yList);
 
-        ChartsGenerator.PlotAndSave(xData, yData, coef);
+        var chartsGen = new ChartsGenerator(expression);
+        chartsGen.PlotAndSave(xData, yData, coef);
     }
 
     static void PrintDataTable(NewtonMethodSolver solver, Vector<double> coef, List<double> xList, List<double> yList)
