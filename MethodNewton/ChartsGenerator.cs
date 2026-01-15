@@ -13,25 +13,25 @@ namespace MethodNewton
 {
     public class ChartsGenerator
     {
-        private MathExpression _function;
-        private List<string> _variablesName;
-        public ChartsGenerator(string expression)
+        private List<IFunction> _function;
+        public ChartsGenerator(List<IFunction> function)
         {
-            MathParser parser = new MathParser();
-            _function = parser.Parse(expression);
-            _variablesName = parser.VariablesName;
-            _variablesName.Remove("x");
+            _function = function;
         }
+
         public void PlotAndSave(
             List<double> xData,
             List<double> yData,
             Vector<double> coefficients,
-            string fileName = "approximation.png")
+            string? fileName = null)
         {
+            if(fileName == null)
+                fileName = "chart_" + $"{DateTime.Now:HH-mm-ss}"+".png";
+            string title = BuildStringTitle(coefficients);
 
             var plotModel = new PlotModel
             {
-                Title = $"Аппроксимация данных\nf(x) = x^{coefficients[0]:0.#####} + {coefficients[1]:0.#####}·sin(x) + {coefficients[2]:0.#####}",
+                Title = $"Аппроксимация данных\n" + title,
                 TitleFontSize = 14,
                 DefaultFont = "Arial",
                 Background = OxyColors.WhiteSmoke,
@@ -103,24 +103,32 @@ namespace MethodNewton
             SavePlot(fileName, plotModel);
         }
 
-        // private double Function(double x, double a, double b, double c)
-        // {
-        //     return Math.Pow(x, a) + b * Math.Sin(x) + c;
-        // }
-
         private double Function(double x, Vector<double> coeff)
         {
-            Dictionary<string, double> variables = new Dictionary<string, double>
-            {
-                { "x", x }
-            };
+            double functionValue = 0;
 
-            for (int i = 0; i < coeff.Count; i++)
+            for (int i = 0; i < _function.Count; i++)
             {
-                variables.Add(_variablesName[i], coeff[i]);
+                functionValue += _function[i].Calculate(x, coeff[i]);
             }
 
-            return _function.Evaluate(variables);
+            return functionValue;
+        }
+
+        private string BuildStringTitle(Vector<double> coeff)
+        {
+            string title = "";
+
+            for (int i = 0; i < _function.Count; i++)
+            {
+                string sign = coeff[i] >= 0 ? "+" : "-";
+                if (i != 0)
+                    title += $"{sign}";
+
+                title += $"{Math.Abs(Math.Round(coeff[i], 4))}*{_function[i]}";
+            }
+
+            return title;
         }
 
         private void SavePlot(string fileName, PlotModel plotModel)

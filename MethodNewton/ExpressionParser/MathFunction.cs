@@ -14,6 +14,9 @@ public class MathFunction : MathExpression
     public override double Evaluate(Dictionary<string, double>? variables = null)
     {
         double argValue = Argument.Evaluate(variables);
+
+        if(FunctionName.ToLower() == "log" && argValue <= 0)
+            return 0;
         
         return FunctionName.ToLower() switch
         {
