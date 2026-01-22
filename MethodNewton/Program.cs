@@ -9,7 +9,9 @@ class Program
     {
         // TestMethod();
 
-        TestSolution();
+        // TestSolutionScript2();
+
+        TestSolution3D();
 
         // TestParser();
         // Console.WriteLine("TEST DATAGENERATOR");
@@ -53,7 +55,7 @@ class Program
         // chartsGen.PlotAndSave(xData, yData, coef);
     }
 
-    static void TestSolution()
+    static void TestSolutionScript1()
     {
 
         string fileName = "Data.xlsx";
@@ -77,13 +79,63 @@ class Program
             new PowFuncDecorator(new LinearFunc(), 2), new PowFuncDecorator(new LinearFunc(), 3), new Constant()};
 
         OptimalFunctionFinder finder = new OptimalFunctionFinder(functionComponents);
-        finder.FindOptimalFunction(xGen, yGen, tolerance);
+        StatisticModels statisticModels = new StatisticModels(finder.FindOptimalFunction(xGen, yGen, tolerance));
+        FunctionModel model = statisticModels.GetMaxDetermModel();
 
-        PrintDataTable(finder.NewtonSolver, finder.CoeffFunctions, xGen, yGen);
-        PrintFunction(finder.OptimalFunction, finder.CoeffFunctions);
+        PrintDataTable(model, xGen, yGen);
+        PrintFunction(model.Function, model.CoeffFunction);
 
-        ChartsGenerator chartsGenerator = new ChartsGenerator(finder.OptimalFunction);
-        chartsGenerator.PlotAndSave(xGen, yGen, finder.CoeffFunctions);
+        ChartsGenerator chartsGenerator = new ChartsGenerator(model.Function);
+        chartsGenerator.PlotAndSave(xGen, yGen, model.CoeffFunction);
+    }
+
+    static void TestSolutionScript2()
+    {
+
+        string fileName = "Data.xlsx";
+        string dataPath = "../data/" + fileName;
+
+        ExcelReader excelReader = new ExcelReader(dataPath);
+        List<double> xGen = new List<double>();
+        List<double> yGen = new List<double>();
+        (xGen, yGen) = excelReader.ExcelFileRead();
+
+        double tolerance = 1e-6;
+
+        // DataGenerator dataGenerator = new DataGenerator("4*sin(x) + 2*cos(x)", 0.5);
+        // List<double> xGen, yGen;
+        // (xGen, yGen) = dataGenerator.GenerateData2D(1, 30);
+
+        PrintInputData(xGen, yGen);
+
+        List<IFunction> functionComponents = new List<IFunction> {new SinFunc(), new CosFunc(), new TgFunc(),
+            new CtgFunc(), new LnFunc(), new ExpFunc(), new LinearFunc(),
+            new PowFuncDecorator(new LinearFunc(), 2), new PowFuncDecorator(new LinearFunc(), 3), new Constant()};
+
+        OptimalFunctionFinder finder = new OptimalFunctionFinder(functionComponents);
+        StatisticModels statisticModels = new StatisticModels(finder.FindOptimalFunction(xGen, yGen, tolerance));
+        FunctionModel model = statisticModels.GetMostCompactEquation(0.96d);
+
+        PrintDataTable(model, xGen, yGen);
+        PrintFunction(model.Function, model.CoeffFunction);
+
+        ChartsGenerator chartsGenerator = new ChartsGenerator(model.Function);
+        chartsGenerator.PlotAndSave(xGen, yGen, model.CoeffFunction);
+    }
+
+    static void TestSolution3D()
+    {
+        string fileName = "Data.xlsx";
+        string dataPath = "../data/" + fileName;
+
+        ExcelReader excelReader = new ExcelReader(dataPath);
+        List<List<double>> xGen = new List<List<double>>();
+        List<double> yGen = new List<double>();
+        (xGen, yGen) = excelReader.ExcelFileRead3D();
+
+        double tolerance = 1e-6;
+
+        PrintInputData3D(xGen, yGen);
     }
 
     static void TestMethod()
@@ -129,19 +181,20 @@ class Program
         Console.WriteLine("");
     }
 
-    static void PrintDataTable(NewtonMethodSolver solver, Vector<double> coef, List<double> xList, List<double> yList)
+    static void PrintDataTable(FunctionModel model, List<double> xList, List<double> yList)
     {
+        CompositeFunc function = new CompositeFunc(model.Function);
         
         Console.WriteLine($"X\t| Y\t| f(X)\t|");
         Console.WriteLine($"--------|-------|-------|");
         for (int i = 0; i < xList.Count; i++)
         {
-            Console.WriteLine($"{Math.Round(xList[i], 2)}\t|{Math.Round(yList[i], 2)}\t|{Math.Round(solver.Function(xList[i], coef), 2)}\t|");
+            Console.WriteLine($"{Math.Round(xList[i], 2)}\t|{Math.Round(yList[i], 2)}\t|{Math.Round(function.Calculate(xList[i], model.CoeffFunction), 2)}\t|");
         }
         Console.WriteLine($"------------------------|");
-        Console.WriteLine($"Сходимость достигнута на итерации : {solver.IterConvergence}");
+        Console.WriteLine($"Сходимость достигнута на итерации : {model.IterConvergence}");
 
-        Console.WriteLine($"Коэффициент детерминации : {Math.Round(solver.DeterminationCoeff(xList.ToArray(), yList.ToArray(), coef), 5)}");
+        Console.WriteLine($"Коэффициент детерминации : {Math.Round(model.DeterminationCoeff, 5)}");
     }
 
     static void PrintInputData(List<double> xData, List<double> yData)
@@ -150,6 +203,17 @@ class Program
         for(int i = 0; i < xData.Count; i++)
         {
             Console.WriteLine($"{xData[i]}\t{yData[i]}");
+        }
+    }
+
+    static void PrintInputData3D(List<List<double>> xData, List<double> yData)
+    {
+        Console.WriteLine("---INPUT DATA---");
+        for(int i = 0; i < yData.Count; i++)
+        {
+            for(int j = 0; j < xData.Count; j++)
+                Console.Write($"{xData[j][i]}\t");
+            Console.Write($"{yData[i]}\n");
         }
     }
     static void TestParser()
