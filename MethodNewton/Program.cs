@@ -11,113 +11,79 @@ class Program
 
         // TestSolutionScript2();
 
-        TestSolution3D();
-
-        // TestParser();
-        // Console.WriteLine("TEST DATAGENERATOR");
-        // DataGenerator dataGenerator = new DataGenerator("x^2 + 1", 3.0);
-        // List<double> xGen, yGen;
-        // (xGen, yGen) = dataGenerator.GenerateData2D(20);
-        // PrintInputData(xGen, yGen);
-
-        // string fileName = "Data.xlsx";
-        // string dataPath = "../data/" + fileName;
-
-        // ExcelReader excelReader = new ExcelReader(dataPath);
-        // List<double> xList = new List<double>();
-        // List<double> yList = new List<double>();
-        // List<double> xData;
-        // List<double> yData;
-        // (xData, yData) = excelReader.ExcelFileRead();
-
-        // for (int i = 0; i < xData.Count; i++)
-        // {
-        //     //функция не определена при x = 0
-        //     if (xData[i] != 0d)
-        //     {
-        //         xList.Add(xData[i]);
-        //         yList.Add(yData[i]);
-        //     }
-        // }
-
-        // // Параметры метода
-        // double tolerance = 1e-6;
-        // int maxIterations = 1000;
-        // string expression = "x^a + b*sin(x) - c";
-        // Vector<double> initGuess = Vector<double>.Build.Dense(new double[] {1.0, 1.0, 1.0 });
-
-        // var solver = new NewtonMethodSolver(expression);
-        // Vector<double> coef = solver.FindCoeff(xList.ToArray(), yList.ToArray(), initGuess, tolerance, maxIterations);
-        
-        // PrintDataTable(solver, coef, xList, yList);
-
-        // var chartsGen = new ChartsGenerator(expression);
-        // chartsGen.PlotAndSave(xData, yData, coef);
+        TestSolutionScript2();
     }
 
-    static void TestSolutionScript1()
-    {
+    // static void TestSolutionScript1()
+    // {
 
-        string fileName = "Data.xlsx";
-        string dataPath = "../data/" + fileName;
+    //     string fileName = "Data.xlsx";
+    //     string dataPath = "../data/" + fileName;
 
-        ExcelReader excelReader = new ExcelReader(dataPath);
-        List<double> xGen = new List<double>();
-        List<double> yGen = new List<double>();
-        (xGen, yGen) = excelReader.ExcelFileRead();
+    //     ExcelReader excelReader = new ExcelReader(dataPath);
+    //     List<List<double>> xGen = new List<List<double>>();
+    //     List<double> yGen = new List<double>();
+    //     (xGen, yGen) = excelReader.ExcelFileRead();
 
-        double tolerance = 1e-6;
+    //     double tolerance = 1e-6;
 
-        // DataGenerator dataGenerator = new DataGenerator("4*sin(x) + 2*cos(x)", 0.5);
-        // List<double> xGen, yGen;
-        // (xGen, yGen) = dataGenerator.GenerateData2D(1, 30);
+    //     // DataGenerator dataGenerator = new DataGenerator("4*sin(x) + 2*cos(x)", 0.5);
+    //     // List<double> xGen, yGen;
+    //     // (xGen, yGen) = dataGenerator.GenerateData2D(1, 30);
 
-        PrintInputData(xGen, yGen);
+    //     PrintInputData(xGen, yGen);
 
-        List<IFunction> functionComponents = new List<IFunction> {new SinFunc(), new CosFunc(), new TgFunc(),
-            new CtgFunc(), new LnFunc(), new ExpFunc(), new LinearFunc(),
-            new PowFuncDecorator(new LinearFunc(), 2), new PowFuncDecorator(new LinearFunc(), 3), new Constant()};
+    //     List<IFunction> functionComponents = new List<IFunction> {new SinFunc(), new CosFunc(), new TgFunc(),
+    //         new CtgFunc(), new LnFunc(), new ExpFunc(), new LinearFunc(),
+    //         new PowFuncDecorator(new LinearFunc(), 2), new PowFuncDecorator(new LinearFunc(), 3), new Constant()};
 
-        OptimalFunctionFinder finder = new OptimalFunctionFinder(functionComponents);
-        StatisticModels statisticModels = new StatisticModels(finder.FindOptimalFunction(xGen, yGen, tolerance));
-        FunctionModel model = statisticModels.GetMaxDetermModel();
+    //     OptimalFunctionFinder finder = new OptimalFunctionFinder(functionComponents);
+    //     StatisticModels statisticModels = new StatisticModels(finder.FindOptimalFunction(xGen, yGen, tolerance));
+    //     FunctionModel model = statisticModels.GetMaxDetermModel();
 
-        PrintDataTable(model, xGen, yGen);
-        PrintFunction(model.Function, model.CoeffFunction);
+    //     // PrintDataTable(model, xGen, yGen);
+    //     // PrintFunction(model.Function, model.CoeffFunction);
 
-        ChartsGenerator chartsGenerator = new ChartsGenerator(model.Function);
-        chartsGenerator.PlotAndSave(xGen, yGen, model.CoeffFunction);
-    }
+    //     // ChartsGenerator chartsGenerator = new ChartsGenerator(model.Function);
+    //     // chartsGenerator.PlotAndSave(xGen, yGen, model.CoeffFunction);
+    // }
 
     static void TestSolutionScript2()
     {
 
-        string fileName = "Data.xlsx";
+        string fileName = "Data3D.xlsx";
         string dataPath = "../data/" + fileName;
 
         ExcelReader excelReader = new ExcelReader(dataPath);
-        List<double> xGen = new List<double>();
+        List<List<double>> xGen = new List<List<double>>();
         List<double> yGen = new List<double>();
         (xGen, yGen) = excelReader.ExcelFileRead();
 
         double tolerance = 1e-6;
 
         // DataGenerator dataGenerator = new DataGenerator("4*sin(x) + 2*cos(x)", 0.5);
-        // List<double> xGen, yGen;
+        // List<List<double>> xGen;
+        // List<double> yGen;
         // (xGen, yGen) = dataGenerator.GenerateData2D(1, 30);
 
-        PrintInputData(xGen, yGen);
+        ConsolePrinter.PrintInputData(xGen, yGen);
+        Console.WriteLine($"{xGen.Count} - CountX");
 
-        List<IFunction> functionComponents = new List<IFunction> {new SinFunc(), new CosFunc(), new TgFunc(),
-            new CtgFunc(), new LnFunc(), new ExpFunc(), new LinearFunc(),
-            new PowFuncDecorator(new LinearFunc(), 2), new PowFuncDecorator(new LinearFunc(), 3), new Constant()};
+        // List<IFunction> functionComponents = new List<IFunction> {new SinFunc(), new CosFunc(), new TgFunc(),
+        //     new CtgFunc(), new LnFunc(), new ExpFunc(), new LinearFunc(),
+        //     new PowFuncDecorator(new LinearFunc(), 2), new PowFuncDecorator(new LinearFunc(), 3), new Constant()};
+
+        List<IFunction> functionComponents = new List<IFunction> {new SinFunc(), new CosFunc(),
+            new LnFunc(), new LinearFunc(), new ExpFunc(),
+            new PowFuncDecorator(new LinearFunc(), 2), new Constant()};
 
         OptimalFunctionFinder finder = new OptimalFunctionFinder(functionComponents);
         StatisticModels statisticModels = new StatisticModels(finder.FindOptimalFunction(xGen, yGen, tolerance));
-        FunctionModel model = statisticModels.GetMostCompactEquation(0.96d);
+        FunctionModel model = statisticModels.GetMostCompactEquation(0.9d);
 
-        PrintDataTable(model, xGen, yGen);
-        PrintFunction(model.Function, model.CoeffFunction);
+        ConsolePrinter.PrintDataTable(model, xGen, yGen);
+        ConsolePrinter.PrintFunction(model.Function, model.CoeffFunction);
+        // Console.WriteLine($"Коэффициент детерминации : {Math.Round(model.DeterminationCoeff, 5)}");
 
         ChartsGenerator chartsGenerator = new ChartsGenerator(model.Function);
         chartsGenerator.PlotAndSave(xGen, yGen, model.CoeffFunction);
@@ -131,91 +97,51 @@ class Program
         ExcelReader excelReader = new ExcelReader(dataPath);
         List<List<double>> xGen = new List<List<double>>();
         List<double> yGen = new List<double>();
-        (xGen, yGen) = excelReader.ExcelFileRead3D();
+        (xGen, yGen) = excelReader.ExcelFileRead();
 
         double tolerance = 1e-6;
 
-        PrintInputData3D(xGen, yGen);
+        ConsolePrinter.PrintInputData(xGen, yGen);
     }
 
-    static void TestMethod()
-    {
-        double tolerance = 1e-6;
+    // static void TestMethod()
+    // {
+    //     double tolerance = 1e-6;
 
-        DataGenerator dataGenerator = new DataGenerator("2*sin(x) + cos(x)", 0);
-        List<double> xGen, yGen;
-        (xGen, yGen) = dataGenerator.GenerateData2D(1, 100);
+    //     DataGenerator dataGenerator = new DataGenerator("2*sin(x) + cos(x)", 0);
+    //     List<double> xGen, yGen;
+    //     (xGen, yGen) = dataGenerator.GenerateData2D(1, 100);
 
-        PrintInputData(xGen, yGen);
+    //     PrintInputData(xGen, yGen);
 
-        List<IFunction> functionComponents = new List<IFunction> {new SinFunc(), new CosFunc(), new TgFunc(),
-            new CtgFunc(), new LnFunc(), new ExpFunc()};
+    //     List<IFunction> functionComponents = new List<IFunction> {new SinFunc(), new CosFunc(), new TgFunc(),
+    //         new CtgFunc(), new LnFunc(), new ExpFunc()};
 
-        OptimalFunctionFinder finder = new OptimalFunctionFinder(functionComponents);
+    //     OptimalFunctionFinder finder = new OptimalFunctionFinder(functionComponents);
 
-        NewtonMethodSolver solver = new NewtonMethodSolver(new List<IFunction> {new SinFunc(), new CosFunc()});
+    //     NewtonMethodSolver solver = new NewtonMethodSolver(new List<IFunction> {new SinFunc(), new CosFunc()});
 
-        Vector<double> initGuess = Vector<double>.Build.Dense(new double[] {1.0, 1.0});
-        Vector<double> coef = solver.FindCoeff(xGen.ToArray(), yGen.ToArray(), initGuess, tolerance, 1000);
-        Console.WriteLine($"Determ = {solver.DeterminationCoeff(xGen.ToArray(), yGen.ToArray(), coef)}");
-        foreach (var item in coef)
-        {
-            Console.WriteLine($"{item}");
-        }
+    //     Vector<double> initGuess = Vector<double>.Build.Dense(new double[] {1.0, 1.0});
+    //     Vector<double> coef = solver.FindCoeff(xGen.ToArray(), yGen.ToArray(), initGuess, tolerance, 1000);
+    //     Console.WriteLine($"Determ = {solver.DeterminationCoeff(xGen.ToArray(), yGen.ToArray(), coef)}");
+    //     foreach (var item in coef)
+    //     {
+    //         Console.WriteLine($"{item}");
+    //     }
 
-    }
+    // }
 
-    static void PrintFunction(List<IFunction> function, Vector<double> coeff)
-    {
-        Console.WriteLine("RESULTING FUNCTION:");
+    
 
-        for(int i = 0; i < function.Count; i++)
-        {
-            string sign =  coeff[i] >=0 ? "+" : "-";
-            if(i!=0)
-                Console.Write($"{sign}");
+    // static void PrintInputData(List<double> xData, List<double> yData)
+    // {
+    //     Console.WriteLine("---INPUT DATA---");
+    //     for(int i = 0; i < xData.Count; i++)
+    //     {
+    //         Console.WriteLine($"{xData[i]}\t{yData[i]}");
+    //     }
+    // }
 
-            Console.Write($"{Math.Abs(Math.Round(coeff[i], 4))}*{function[i]}");   
-        }
-
-        Console.WriteLine("");
-    }
-
-    static void PrintDataTable(FunctionModel model, List<double> xList, List<double> yList)
-    {
-        CompositeFunc function = new CompositeFunc(model.Function);
-        
-        Console.WriteLine($"X\t| Y\t| f(X)\t|");
-        Console.WriteLine($"--------|-------|-------|");
-        for (int i = 0; i < xList.Count; i++)
-        {
-            Console.WriteLine($"{Math.Round(xList[i], 2)}\t|{Math.Round(yList[i], 2)}\t|{Math.Round(function.Calculate(xList[i], model.CoeffFunction), 2)}\t|");
-        }
-        Console.WriteLine($"------------------------|");
-        Console.WriteLine($"Сходимость достигнута на итерации : {model.IterConvergence}");
-
-        Console.WriteLine($"Коэффициент детерминации : {Math.Round(model.DeterminationCoeff, 5)}");
-    }
-
-    static void PrintInputData(List<double> xData, List<double> yData)
-    {
-        Console.WriteLine("---INPUT DATA---");
-        for(int i = 0; i < xData.Count; i++)
-        {
-            Console.WriteLine($"{xData[i]}\t{yData[i]}");
-        }
-    }
-
-    static void PrintInputData3D(List<List<double>> xData, List<double> yData)
-    {
-        Console.WriteLine("---INPUT DATA---");
-        for(int i = 0; i < yData.Count; i++)
-        {
-            for(int j = 0; j < xData.Count; j++)
-                Console.Write($"{xData[j][i]}\t");
-            Console.Write($"{yData[i]}\n");
-        }
-    }
     static void TestParser()
     {
         string expression = "x^a + b*sin(x) - c";
