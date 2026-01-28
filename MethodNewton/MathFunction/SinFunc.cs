@@ -2,13 +2,14 @@ using System;
 
 namespace MethodNewton
 {
-    public class SinFunc : IFunction
+    public class SinFunc : AFunction
     {
-        public double Calculate(double argument, double coefficient)
+        public SinFunc(int argumentIndex = 0): base(argumentIndex){}
+        protected override double CalculateFunc(double argument, double coefficient)
         {
             return coefficient * Math.Sin(argument);
         }
 
-        public override string ToString() => $"sin(x)";
+        public override string ToString() => $"sin(x{_argIndex + 1})";
     }
 }

@@ -4,7 +4,7 @@ namespace MethodNewton
 {
     public class Constant : IFunction
     {
-        public double Calculate(double argument, double coefficient)
+        public double Calculate(double[] argument, double coefficient)
         {
             return coefficient;
         }

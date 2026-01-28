@@ -24,7 +24,7 @@ namespace MethodNewton
                 _functions.Add(function);
         }
 
-        public double Calculate(double argument, double coefficient)
+        public double Calculate(double[] argument, double coefficient)
         {
             double functionValue = 0;
             
@@ -36,7 +36,7 @@ namespace MethodNewton
             return functionValue;
         }
 
-        public double Calculate(double argument, Vector<double> coefficient)
+        public double Calculate(double[] argument, Vector<double> coefficient)
         {
             double functionValue = 0;
             

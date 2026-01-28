@@ -2,13 +2,14 @@ using System;
 
 namespace MethodNewton
 {
-    public class LinearFunc : IFunction
+    public class LinearFunc : AFunction
     {
-        public double Calculate(double argument, double coefficient)
+        public LinearFunc(int argumentIndex = 0): base(argumentIndex){}
+        protected override double CalculateFunc(double argument, double coefficient)
         {
             return coefficient * argument;
         }
 
-        public override string ToString() => $"x";
+        public override string ToString() => $"x{_argIndex + 1}";
     }
 }

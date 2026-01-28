@@ -4,6 +4,6 @@ namespace MethodNewton
 {
     public interface IFunction
     {
-        double Calculate(double argument, double coefficient);
+        double Calculate(double[] arguments, double coefficient);
     }
 }

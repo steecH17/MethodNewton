@@ -11,7 +11,8 @@ namespace MethodNewton
             _decoratedFunc = function;
             _degree = degree;
         }
-        public double Calculate(double argument, double coefficient)
+        public int Degree => _degree;
+        public double Calculate(double[] argument, double coefficient)
         {
             return Math.Pow(_decoratedFunc.Calculate(argument, coefficient), _degree);
         }
