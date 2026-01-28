@@ -12,41 +12,41 @@ namespace MethodNewton
     {
         private readonly string _path = path;
 
-        public (List<double>, List<double>) ExcelFileRead()
-        {
-            List<double> xList = new List<double>();
-            List<double> yList = new List<double>();
+        // public (List<double>, List<double>) ExcelFileRead()
+        // {
+        //     List<double> xList = new List<double>();
+        //     List<double> yList = new List<double>();
 
-            // Загрузить файл Excel
-            Workbook wb = new Workbook(_path);
+        //     // Загрузить файл Excel
+        //     Workbook wb = new Workbook(_path);
 
-            // Получить все рабочие листы
-            WorksheetCollection collection = wb.Worksheets;
+        //     // Получить все рабочие листы
+        //     WorksheetCollection collection = wb.Worksheets;
 
-            // Получить рабочий лист, используя его индекс
-            Worksheet worksheet = collection[0];
+        //     // Получить рабочий лист, используя его индекс
+        //     Worksheet worksheet = collection[0];
 
-            int rows = worksheet.Cells.MaxDataRow;
+        //     int rows = worksheet.Cells.MaxDataRow;
 
-            for (int i = 2; i <= rows; i++)
-            {
-                for(int j = 1; j < 3; j++)
-                {
-                    if(j == 1)
-                    {
-                        xList.Add(worksheet.Cells[i,j].DoubleValue);
-                    }
-                    if(j == 2)
-                    {
-                        yList.Add(worksheet.Cells[i, j].DoubleValue);
-                    }
-                }
-            }
+        //     for (int i = 2; i <= rows; i++)
+        //     {
+        //         for(int j = 1; j < 3; j++)
+        //         {
+        //             if(j == 1)
+        //             {
+        //                 xList.Add(worksheet.Cells[i,j].DoubleValue);
+        //             }
+        //             if(j == 2)
+        //             {
+        //                 yList.Add(worksheet.Cells[i, j].DoubleValue);
+        //             }
+        //         }
+        //     }
 
-            return (xList, yList);
-        }
+        //     return (xList, yList);
+        // }
 
-        public (List<List<double>>, List<double>) ExcelFileRead3D()
+        public (List<List<double>>, List<double>) ExcelFileRead()
         {
             List<List<double>> xList = new List<List<double>>();
             List<double> yList = new List<double>();
@@ -63,18 +63,33 @@ namespace MethodNewton
             int rows = worksheet.Cells.MaxDataRow;
             int columns = worksheet.Cells.MaxDataColumn;
 
-            for(int col = 1; col <= columns; col++)
-            {
-                if(col < columns)
-                    xList.Add(new List<double>());
+            // for(int col = 1; col <= columns; col++)
+            // {
+            //     if(col < columns)
+            //         xList.Add(new List<double>());
 
-                for(int row = 2; row <= rows; row++)
+            //     for(int row = 2; row <= rows; row++)
+            //     {
+            //         if(col < columns)
+            //             xList[col-1].Add(worksheet.Cells[row,col].DoubleValue);
+            //         else
+            //             yList.Add(worksheet.Cells[row,col].DoubleValue);
+            //     }
+            // }
+
+            int xCount = 0;
+            for(int row = 2; row <= rows; row++)
+            {
+                xList.Add(new List<double>());
+
+                for(int col = 1; col <= columns; col++)
                 {
                     if(col < columns)
-                        xList[col-1].Add(worksheet.Cells[row,col].DoubleValue);
+                        xList[xCount].Add(worksheet.Cells[row,col].DoubleValue);
                     else
                         yList.Add(worksheet.Cells[row,col].DoubleValue);
                 }
+                    xCount++;
             }
 
             return (xList, yList);

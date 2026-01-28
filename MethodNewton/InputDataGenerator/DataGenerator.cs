@@ -22,16 +22,19 @@ namespace MethodNewton
             set { _maxNoise = value; }
         }
 
-        public (List<double>, List<double>) GenerateData2D(int startPoint, int countData)
+        public (List<List<double>>, List<double>) GenerateData2D(int startPoint, int endPoint)
         {
-            List<double> xData = new List<double>();
+            List<List<double>> xData = new List<List<double>>();
             List<double> yData = new List<double>();
+            int dataInd = 0;
 
-            for (int i = startPoint; i < countData + 1; i++)
+            for (int i = startPoint; i < endPoint + 1; i++)
             {
                 double randomNoise = sign[random.Next(2)] * random.NextDouble() * _maxNoise;
-                xData.Add(i);
+                xData.Add(new List<double>());
+                xData[dataInd].Add(i);
                 yData.Add(FunctionValue(i) + randomNoise);
+                dataInd++;
             }
 
             return (xData, yData);
