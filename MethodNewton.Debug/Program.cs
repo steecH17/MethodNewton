@@ -2,6 +2,7 @@
 using System;
 using MathNet.Numerics.LinearAlgebra;
 using Aspose.Cells.Drawing.Equations;
+using MathNet.Numerics.LinearAlgebra.Solvers;
 
 class Program
 {
@@ -51,7 +52,7 @@ class Program
     static void TestSolutionScript2()
     {
 
-        string fileName = "Data3D.xlsx";
+        string fileName = "Data2D.xlsx";
         string dataPath = "../data/" + fileName;
 
         ExcelReader excelReader = new ExcelReader(dataPath);
@@ -79,10 +80,12 @@ class Program
 
         OptimalFunctionFinder finder = new OptimalFunctionFinder(functionComponents);
         StatisticModels statisticModels = new StatisticModels(finder.FindOptimalFunction(xGen, yGen, tolerance));
-        FunctionModel model = statisticModels.GetMostCompactEquation(0.9d);
+        FunctionModel model = statisticModels.GetMostCompactEquation(0.96d);
 
         ConsolePrinter.PrintDataTable(model, xGen, yGen);
+        Console.WriteLine($"Время поиска оптимальной функции: {finder.SearchTime.ElapsedMilliseconds} ms");
         ConsolePrinter.PrintFunction(model.Function, model.CoeffFunction);
+        Console.WriteLine($"Время поиска коэффициентов методом Ньютона: {model.SolveTime.ElapsedMilliseconds} ms");
         // Console.WriteLine($"Коэффициент детерминации : {Math.Round(model.DeterminationCoeff, 5)}");
 
         ChartsGenerator chartsGenerator = new ChartsGenerator(model.Function);

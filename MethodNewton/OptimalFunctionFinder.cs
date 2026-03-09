@@ -1,6 +1,8 @@
 using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Complex;
+using System.Diagnostics;
+using System.Runtime.Serialization;
 
 namespace MethodNewton
 {
@@ -13,6 +15,7 @@ namespace MethodNewton
         double _tolerance;
         int _countArguments;
         List<FunctionModel> functionModels = new List<FunctionModel>();
+        Stopwatch searchTimer = new Stopwatch();
 
         public OptimalFunctionFinder(List<IFunction> components)
         {
@@ -20,6 +23,8 @@ namespace MethodNewton
             _functionsComponent = new List<IFunction>();
             _countArguments = 1;
         }
+
+        public Stopwatch SearchTime => searchTimer;
 
         public List<FunctionModel> FindOptimalFunction(List<List<double>> xData, List<double> yData, double tolerance)
         {
@@ -32,6 +37,8 @@ namespace MethodNewton
             double[][] xArrayData = this.xData.Select(list => list.ToArray()).ToArray();
             List<List<IFunction>> combinations = GenerateCombinations();
 
+            searchTimer.Start();
+
             for (int i = 0; i < combinations.Count; i++)
             {
                 NewtonMethodSolver solver = new NewtonMethodSolver(combinations[i]);
@@ -43,9 +50,12 @@ namespace MethodNewton
                     combinations[i],
                     coeffFunction,
                     solver.IterConvergence,
-                    solver.DeterminationCoeff(xArrayData, this.yData.ToArray(), coeffFunction))
+                    solver.DeterminationCoeff(xArrayData, this.yData.ToArray(), coeffFunction),
+                    solver.SolveTime)
                     );
             }
+
+            searchTimer.Stop();
 
             return functionModels;
         }

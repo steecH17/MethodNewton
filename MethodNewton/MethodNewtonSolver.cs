@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 
 namespace MethodNewton
 {
@@ -9,6 +10,7 @@ namespace MethodNewton
     {
         private List<IFunction> _function;
         private int _iterConvergence;
+        private Stopwatch timer = new Stopwatch();
         public int IterConvergence => _iterConvergence;
 
         public NewtonMethodSolver(List<IFunction> function)
@@ -16,6 +18,8 @@ namespace MethodNewton
             _iterConvergence = -1;
             _function = function;
         }
+
+        public Stopwatch SolveTime => timer;
 
         /// <summary>
         /// Метод для поиска коэффициентов
@@ -25,7 +29,8 @@ namespace MethodNewton
         /// <param name="a">Начальное приближение коэффициентов</param>
         public Vector<double> FindCoeff(double[][] x, double[] y, Vector<double> a, double tolerance, int maxIterations)
         {
-            // Защита от дурака
+            timer.Start();
+
             if (a.Count != _function.Count)
                 throw new ArgumentException($"Количество коэффициентов ({a.Count}) не совпадает с количеством функций ({_function.Count}).");
 
@@ -85,6 +90,8 @@ namespace MethodNewton
 
                 determCoef = newDetermCoef;
             }
+
+            timer.Stop();
 
             return a;
         }

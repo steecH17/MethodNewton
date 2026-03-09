@@ -1,5 +1,6 @@
 using System;
 using MathNet.Numerics.LinearAlgebra;
+using System.Diagnostics;
 
 namespace MethodNewton
 {
@@ -9,13 +10,15 @@ namespace MethodNewton
         Vector<double> _coeffFunction;
         int _iterConvergence;
         double _determinationCoeff;
+        Stopwatch _solveTime;
 
-        public FunctionModel(List<IFunction> function, Vector<double> coeffFunc, int iterConvergence, double coeffDeterm)
+        public FunctionModel(List<IFunction> function, Vector<double> coeffFunc, int iterConvergence, double coeffDeterm, Stopwatch solveTime)
         {
             _function = function;
             _coeffFunction = coeffFunc;
             _iterConvergence = iterConvergence;
             _determinationCoeff = coeffDeterm;
+            _solveTime = solveTime;
         }
 
         public List<IFunction> Function => _function;
@@ -23,6 +26,7 @@ namespace MethodNewton
         public Vector<double> CoeffFunction => _coeffFunction;
         public int IterConvergence => _iterConvergence;
         public double DeterminationCoeff => _determinationCoeff;
+        public Stopwatch SolveTime => _solveTime;
 
     }
 }
