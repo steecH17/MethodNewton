@@ -1,6 +1,10 @@
 ﻿using System.Data;
 using System.Data.Common;
 using System.Windows.Forms;
+using OxyPlot;
+using OxyPlot.Series;
+using OxyPlot.Axes;
+using OxyPlot.WindowsForms;
 
 namespace MethodNewton.WinForms;
 
@@ -21,7 +25,18 @@ public partial class Form1 : Form
     private Label determValueLabel;
     private Label iterationsValueLabel;
     private Label componentsValueLabel;
-    private Button chartButton;
+    // НОВЫЕ метки для вкладки "Результаты"
+    private Label functionResValueLabel;
+    private Label determResValueLabel;
+    private Label iterationsResValueLabel;
+    private Label componentsResValueLabel;
+    private Label timeResValueLabel;
+    private TabControl _tabControl;
+    private TabPage _inputTab, _resultsTab, _chartTab;
+    private DataGridView _resultsDataGridView; // Таблица для вкладки результатов
+    private PlotView _plotView; // Контрол для графика
+    private Label timeValueLabel; // Для времени поиска
+    private Button saveChartBtn;
     public Form1()
     {
         InitializeComponent();
@@ -29,22 +44,19 @@ public partial class Form1 : Form
         _appSettings = new AppSettings();
         countDataInTable = 0;
         canEditTable = false;
-
-        //xData = new List<List<double>>();
-        //yData = new List<double>();
     }
 
     private void InitializeToolStrip()
     {
-        this.Size = new Size(1300, 750);
+        // Основные настройки формы
+        this.Size = new Size(1300, 800);
         this.Text = "Автоматизация выбора трансцендентной функции";
         this.StartPosition = FormStartPosition.CenterScreen;
         this.BackColor = Color.White;
         this.Font = new Font("Segoe UI", 9F);
 
-        // Создаем меню
-        var menuStrip = new MenuStrip { BackColor = Color.WhiteSmoke };
-
+        // --- 1. ВЕРХНЕЕ МЕНЮ (MenuStrip) ---
+        var menuStrip = new MenuStrip { BackColor = Color.WhiteSmoke, Padding = new Padding(6, 2, 0, 2) };
         var fileMenu = new ToolStripMenuItem("Файл");
         fileMenu.DropDownItems.Add("Новый", null, (s, e) => ClearData());
         fileMenu.DropDownItems.Add("Открыть...", null, (s, e) => LoadFromFile());
@@ -63,247 +75,417 @@ public partial class Form1 : Form
 
         menuStrip.Items.AddRange(new ToolStripItem[] { fileMenu, editMenu });
 
-        // Панель инструментов
-        var toolStrip = new ToolStrip();
+        // NEW---------------------------
+        // --- 2. TAB CONTROL (ВКЛАДКИ) ---
+        _tabControl = new TabControl { Dock = DockStyle.Fill, Padding = new Point(12, 8) };
+        _inputTab = new TabPage(" Ввод данных ");
+        _resultsTab = new TabPage(" Результаты ");
+        _chartTab = new TabPage(" График ");
+        _tabControl.TabPages.AddRange(new[] { _inputTab, _resultsTab, _chartTab });
+
+        // --- ВКЛАДКА 1: ВВОД ДАННЫХ ---
+        var toolStrip = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden, BackColor = Color.White, Padding = new Padding(5) };
         toolStrip.Items.Add(new ToolStripButton("➕", null, (s, e) => AddEmptyRow()) { ToolTipText = "Добавить строку" });
         toolStrip.Items.Add(new ToolStripButton("❌", null, (s, e) => DeleteSelectedRows()) { ToolTipText = "Удалить строку" });
-        toolStrip.Items.Add(new ToolStripSeparator());
-        toolStrip.Items.Add(new ToolStripButton("📋", null, (s, e) => CopySelectedCells()) { ToolTipText = "Копировать" });
-        toolStrip.Items.Add(new ToolStripButton("📝", null, (s, e) => PasteToCells()) { ToolTipText = "Вставить" });
-        toolStrip.Items.Add(new ToolStripSeparator());
-        toolStrip.Items.Add(new ToolStripButton("💾", null, (s, e) => SaveToFile()) { ToolTipText = "Сохранить" });
-        toolStrip.Items.Add(new ToolStripButton("📊", null, (s, e) => ShowStatistics()) { ToolTipText = "Статистика" });
 
-        // DataGridView
         _dataGridView = new DataGridView
         {
             Dock = DockStyle.Fill,
+            BackgroundColor = Color.White,
+            BorderStyle = BorderStyle.None,
             AllowUserToAddRows = false,
-            AllowUserToDeleteRows = true,
             RowHeadersVisible = true,
             MultiSelect = true,
             SelectionMode = DataGridViewSelectionMode.RowHeaderSelect,
-            EditMode = DataGridViewEditMode.EditOnKeystrokeOrF2,
-            ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells,
-            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
+            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
         };
+        _dataGridView.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
+        _dataGridView.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+        _dataGridView.EnableHeadersVisualStyles = false;
 
-        // Контекстное меню
-        var contextMenu = new ContextMenuStrip();
-        contextMenu.Items.Add("Добавить строку", null, (s, e) => AddEmptyRow());
-        contextMenu.Items.Add("Удалить строку", null, (s, e) => DeleteSelectedRows());
-        contextMenu.Items.Add(new ToolStripSeparator());
-        contextMenu.Items.Add("Копировать", null, (s, e) => CopySelectedCells());
-        contextMenu.Items.Add("Вставить", null, (s, e) => PasteToCells());
-        contextMenu.Items.Add("Очистить ячейки", null, (s, e) => ClearSelectedCells());
+        var bottomPanel = new Panel { Dock = DockStyle.Bottom, Height = 160, BackColor = Color.FromArgb(245, 246, 247), Padding = new Padding(10) };
+        var buttonsPanel = new FlowLayoutPanel { Width = 200, Dock = DockStyle.Left, FlowDirection = FlowDirection.TopDown };
 
-        _dataGridView.ContextMenuStrip = contextMenu;
-
-        // Панель статуса
-        var statusStrip = new StatusStrip();
-        var statusLabel = new ToolStripStatusLabel("Готово");
-        var rowCountLabel = new ToolStripStatusLabel();
-        statusStrip.Items.AddRange(new ToolStripItem[] { statusLabel, rowCountLabel });
-
-        // Панель с кнопкой расчета и результатами
-        var bottomPanel = new Panel
-        {
-            Dock = DockStyle.Bottom,
-            Height = 140,
-            BackColor = Color.FromArgb(240, 240, 240),
-            BorderStyle = BorderStyle.FixedSingle
-        };
-
-        // Кнопка "Найти функцию"
         var calculateButton = new Button
         {
             Text = "🔍 НАЙТИ ФУНКЦИЮ",
-            Location = new Point(10, 15),
-            Size = new Size(150, 45),
+            Size = new Size(180, 50),
             BackColor = Color.FromArgb(0, 120, 215),
             ForeColor = Color.White,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            FlatStyle = FlatStyle.Flat
+            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+            FlatStyle = FlatStyle.Flat,
+            Cursor = Cursors.Hand
         };
         calculateButton.FlatAppearance.BorderSize = 0;
         calculateButton.Click += CalculateButton_Click;
+        buttonsPanel.Controls.Add(calculateButton);
 
-        // Группа с результатами
-        var resultGroupBox = new GroupBox
+        // ПАНЕЛЬ: БЫСТРЫЙ РЕЗУЛЬТАТ (Вкладка 1)
+        var quickResGroup = new GroupBox { Text = " Быстрый результат ", Dock = DockStyle.Fill, Font = new Font("Segoe UI Semibold", 9F) };
+        functionValueLabel = new Label { Text = "—", Location = new Point(15, 35), Size = new Size(850, 35), Font = new Font("Consolas", 12F, FontStyle.Bold), ForeColor = Color.FromArgb(0, 102, 204), TextAlign = ContentAlignment.MiddleLeft };
+
+        var quickMetricsFlow = new FlowLayoutPanel { Location = new Point(15, 80), Size = new Size(900, 40), FlowDirection = FlowDirection.LeftToRight };
+        determValueLabel = new Label { Text = "R²: —", AutoSize = true, Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = Color.Green, Margin = new Padding(0, 5, 25, 0) };
+        iterationsValueLabel = new Label { Text = "Итераций: —", AutoSize = true, Margin = new Padding(0, 5, 25, 0) };
+        componentsValueLabel = new Label { Text = "Слагаемых: —", AutoSize = true, Margin = new Padding(0, 5, 25, 0) };
+        timeValueLabel = new Label { Text = "Время: —", AutoSize = true, Margin = new Padding(0, 5, 0, 0) };
+
+        quickMetricsFlow.Controls.AddRange(new Control[] { determValueLabel, iterationsValueLabel, componentsValueLabel, timeValueLabel });
+        quickResGroup.Controls.AddRange(new Control[] { functionValueLabel, quickMetricsFlow });
+        bottomPanel.Controls.Add(quickResGroup);
+        bottomPanel.Controls.Add(buttonsPanel);
+
+        // Контекстное меню для копирования
+        var copyMenu = new ContextMenuStrip();
+        copyMenu.Items.Add("Копировать как Текст", null, (s, e) => { if (_functionModel != null) Clipboard.SetText(_functionModel.ToString()); });
+        copyMenu.Items.Add("Копировать как LaTeX", null, (s, e) => { if (_functionModel != null) Clipboard.SetText(_functionModel.ToLatex()); });
+        functionValueLabel.ContextMenuStrip = copyMenu;
+
+        _inputTab.Controls.Add(_dataGridView);
+        _inputTab.Controls.Add(toolStrip);
+        _inputTab.Controls.Add(bottomPanel);
+
+        // --- ВКЛАДКА 2: ПОДРОБНЫЕ РЕЗУЛЬТАТЫ ---
+        var resultsMainPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(15) };
+
+        var metricsGroup = new GroupBox { Text = " Метрики аппроксимации ", Dock = DockStyle.Top, Height = 140, Font = new Font("Segoe UI Semibold", 9F) };
+
+        functionResValueLabel = new Label { Text = "Функция: —", Location = new Point(20, 25), Size = new Size(1000, 35), Font = new Font("Consolas", 11F, FontStyle.Bold), ForeColor = Color.FromArgb(0, 102, 204) };
+        determResValueLabel = new Label { Text = "R²: —", Location = new Point(20, 65), AutoSize = true, Font = new Font("Segoe UI", 11F, FontStyle.Bold), ForeColor = Color.Green };
+        iterationsResValueLabel = new Label { Text = "Итераций: —", Location = new Point(20, 95), AutoSize = true };
+        timeResValueLabel = new Label { Text = "Время поиска: —", Location = new Point(250, 95), AutoSize = true };
+        componentsResValueLabel = new Label { Text = "Компонентов: —", Location = new Point(500, 95), AutoSize = true };
+
+        metricsGroup.Controls.AddRange(new Control[] { functionResValueLabel, determResValueLabel, iterationsResValueLabel, timeResValueLabel, componentsResValueLabel });
+
+        _resultsDataGridView = new DataGridView
         {
-            Text = "Результаты аппроксимации",
-            Location = new Point(170, 5),
-            Size = new Size(1100, 120),
-            Font = new Font("Segoe UI", 9, FontStyle.Bold)
+            Dock = DockStyle.Fill,
+            BackgroundColor = Color.White,
+            ReadOnly = true,
+            AllowUserToAddRows = false,
+            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
         };
 
-        // Первая строка
-        var functionLabel = new Label
+        // Добавим панель управления справа от таблицы
+        var resultsTools = new FlowLayoutPanel
         {
-            Text = "Найденная функция:",
-            Location = new Point(10, 20),
-            Size = new Size(170, 25),
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            AutoSize = false,
-            TextAlign = ContentAlignment.MiddleLeft
+            Dock = DockStyle.Right,
+            Width = 180,
+            BackColor = Color.FromArgb(240, 240, 240),
+            Padding = new Padding(10)
         };
 
-        functionValueLabel = new Label
+        var exportResultsBtn = new Button
         {
-            Text = "—",
-            Location = new Point(200, 20),
-            Size = new Size(550, 25),
-            Font = new Font("Consolas", 9, FontStyle.Bold),
-            ForeColor = Color.FromArgb(0, 102, 204),
-            AutoSize = false,
-            TextAlign = ContentAlignment.MiddleLeft,
-            AutoEllipsis = true
+            Text = "💾 Экспорт в Excel",
+            Size = new Size(150, 65),
+            BackColor = Color.White,
+            FlatStyle = FlatStyle.Flat,
+            Font = new Font("Segoe UI", 9F, FontStyle.Bold)
         };
 
-        var r2Label = new Label
+        exportResultsBtn.Click += (s, e) =>
         {
-            Text = "R² =",
-            Location = new Point(10, 80),
-            Size = new Size(50, 25),
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            TextAlign = ContentAlignment.MiddleRight
+            if (_functionModel == null || xData == null || yData == null)
+            {
+                MessageBox.Show("Сначала выполните расчет!", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            using var sfd = new SaveFileDialog
+            {
+                Filter = "Excel Files|*.xlsx",
+                FileName = "Результаты_анализа.xlsx"
+            };
+
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    // Подготавливаем список рассчитанных значений f(x)
+                    List<double> yCalc = new List<double>();
+                    foreach (var xRow in xData)
+                    {
+                        double val = 0;
+                        double[] xArray = xRow.ToArray();
+                        for (int i = 0; i < _functionModel.Function.Count; i++)
+                        {
+                            val += _functionModel.Function[i].Calculate(xArray, _functionModel.CoeffFunction[i]);
+                        }
+                        yCalc.Add(val);
+                    }
+
+                    // Вызываем обновленный метод принтера
+                    ExcelPrinter printer = new ExcelPrinter(sfd.FileName);
+                    printer.SaveResultsExcel(xData, yData, yCalc, sfd.FileName);
+
+                    MessageBox.Show("Файл успешно сохранен!", "Экспорт", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при экспорте: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         };
 
-        determValueLabel = new Label
+        resultsTools.Controls.Add(exportResultsBtn);
+
+        resultsMainPanel.Controls.Add(resultsTools);
+        resultsMainPanel.Controls.Add(_resultsDataGridView);
+        resultsMainPanel.Controls.Add(new Label { Text = "Таблица сравнения (исходные vs расчетные):", Dock = DockStyle.Top, Height = 30, TextAlign = ContentAlignment.BottomLeft });
+        resultsMainPanel.Controls.Add(metricsGroup);
+        _resultsTab.Controls.Add(resultsMainPanel);
+
+        // --- ВКЛАДКА 3: ГРАФИК ---
+        _plotView = new PlotView { Dock = DockStyle.Fill, BackColor = Color.White };
+        var chartTools = new Panel { Dock = DockStyle.Right, Width = 160, BackColor = Color.FromArgb(240, 240, 240) };
+        saveChartBtn = new Button
         {
-            Text = "—",
-            Location = new Point(70, 80),
-            Size = new Size(80, 25),
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            ForeColor = Color.Green,
-            TextAlign = ContentAlignment.MiddleLeft
+            Text = "💾 Сохранить PNG",
+            Size = new Size(140, 40),
+            Location = new Point(10, 10),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.White,
+            Enabled = false
+        };
+        saveChartBtn.Click += (s, e) =>
+        {
+            using var sfd = new SaveFileDialog
+            {
+                Filter = "PNG Image|*.png",
+                FileName = "ApproximationChart.png"
+            };
+
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    // Создаем экспортер
+                    var pngExporter = new OxyPlot.WindowsForms.PngExporter
+                    {
+                        Width = 1000,
+                        Height = 700
+                    };
+
+                    // Создаем поток для записи файла и передаем его в метод Export
+                    using (var stream = System.IO.File.Create(sfd.FileName))
+                    {
+                        pngExporter.Export(_plotView.Model, stream);
+                    }
+
+                    MessageBox.Show("График сохранен успешно!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при сохранении: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         };
 
-        var iterationsLabel = new Label
-        {
-            Text = "Итераций:",
-            Location = new Point(190, 80),
-            Size = new Size(120, 25),
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            TextAlign = ContentAlignment.MiddleRight
-        };
+        chartTools.Controls.Add(saveChartBtn);
+        _chartTab.Controls.Add(_plotView);
+        _chartTab.Controls.Add(chartTools);
 
-        iterationsValueLabel = new Label
-        {
-            Text = "—",
-            Location = new Point(330, 80),
-            Size = new Size(50, 25),
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-
-        // Вторая строка
-        var componentsLabel = new Label
-        {
-            Text = "Компонентов:",
-            Location = new Point(10, 50),
-            Size = new Size(120, 25),
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-
-        componentsValueLabel = new Label
-        {
-            Text = "—",
-            Location = new Point(150, 50),
-            Size = new Size(50, 25),
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-
-        // Кнопка для построения графика
-        chartButton = new Button
-        {
-            Text = "📈 Построить график",
-            Location = new Point(850, 45),
-            Size = new Size(160, 35),
-            Enabled = false,
-            FlatStyle = FlatStyle.Standard,
-            BackColor = SystemColors.Control,
-            UseVisualStyleBackColor = true,
-            Font = new Font("Segoe UI", 9)
-        };
-        chartButton.Click += ChartButton_Click;
-
-        // Добавляем метки в GroupBox
-        resultGroupBox.Controls.AddRange(new Control[]
-        {
-        functionLabel, functionValueLabel,
-        r2Label, determValueLabel,
-        iterationsLabel, iterationsValueLabel,
-        componentsLabel, componentsValueLabel,
-        chartButton
-        });
-
-        // Добавляем кнопку и GroupBox в панель
-        bottomPanel.Controls.Add(calculateButton);
-        bottomPanel.Controls.Add(resultGroupBox);
-
-        // Устанавливаем Dock для всех элементов
-        menuStrip.Dock = DockStyle.Top;
-        toolStrip.Dock = DockStyle.Top;
-        _dataGridView.Dock = DockStyle.Fill;
-        bottomPanel.Dock = DockStyle.Bottom;
-        statusStrip.Dock = DockStyle.Bottom;
-
-        // ОЧЕНЬ ВАЖНО: правильный порядок добавления (сверху вниз)
+        // Сборка формы
         this.Controls.Clear();
-        this.Controls.Add(menuStrip);        // 1. Меню - самый верх
-        this.Controls.Add(toolStrip);        // 2. Панель инструментов - под меню
-        this.Controls.Add(_dataGridView);    // 3. Таблица - заполняет середину
-        this.Controls.Add(bottomPanel);      // 4. Панель результатов - над статусбаром
-        this.Controls.Add(statusStrip);      // 5. Статус бар - самый низ
-
-        // Убеждаемся, что порядок соблюден
-        menuStrip.BringToFront();
-        toolStrip.BringToFront();
-        _dataGridView.BringToFront();
-        bottomPanel.BringToFront();
-        statusStrip.SendToBack();
-
-        // Обновляем статус
-        _dataGridView.RowsAdded += _dataGridView_RowsAdded;
-        _dataGridView.CellValueChanged += _dataGridView_CellValueChanged;
-        _dataGridView.DataError += _dataGridView_DataError;
-        _dataGridView.CellValidating += _dataGridView_CellValidating;
-
-        // Принудительно обновляем макет
+        this.Controls.Add(_tabControl);
+        this.Controls.Add(menuStrip);
         this.PerformLayout();
+        // NEW -----------------
+
+        // // --- 2. ПАНЕЛЬ ИНСТРУМЕНТОВ (ToolStrip) ---
+        // var toolStrip = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden, BackColor = Color.White, Padding = new Padding(5) };
+        // toolStrip.Items.Add(new ToolStripButton("➕", null, (s, e) => AddEmptyRow()) { ToolTipText = "Добавить строку" });
+        // toolStrip.Items.Add(new ToolStripButton("❌", null, (s, e) => DeleteSelectedRows()) { ToolTipText = "Удалить строку" });
+        // toolStrip.Items.Add(new ToolStripSeparator());
+        // toolStrip.Items.Add(new ToolStripButton("📋", null, (s, e) => CopySelectedCells()) { ToolTipText = "Копировать данные" });
+        // toolStrip.Items.Add(new ToolStripSeparator());
+        // toolStrip.Items.Add(new ToolStripButton("💾", null, (s, e) => SaveToFile()) { ToolTipText = "Сохранить в Excel" });
+
+        // // --- 3. ТАБЛИЦА ДАННЫХ (DataGridView) ---
+        // _dataGridView = new DataGridView
+        // {
+        //     Dock = DockStyle.Fill,
+        //     BackgroundColor = Color.White,
+        //     BorderStyle = BorderStyle.None,
+        //     AllowUserToAddRows = false,
+        //     RowHeadersVisible = true,
+        //     MultiSelect = true,
+        //     SelectionMode = DataGridViewSelectionMode.RowHeaderSelect,
+        //     AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+        //     EnableHeadersVisualStyles = false
+        // };
+        // // Стиль заголовков таблицы
+        // _dataGridView.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
+        // _dataGridView.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+        // _dataGridView.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(250, 250, 252);
+
+        // // --- 4. НИЖНЯЯ ПАНЕЛЬ РЕЗУЛЬТАТОВ ---
+        // var bottomPanel = new Panel
+        // {
+        //     Dock = DockStyle.Bottom,
+        //     Height = 160,
+        //     BackColor = Color.FromArgb(245, 246, 247),
+        //     Padding = new Padding(10)
+        // };
+
+        // // Контейнер для кнопок (слева, вертикально)
+        // var buttonsPanel = new FlowLayoutPanel
+        // {
+        //     Width = 200,
+        //     Dock = DockStyle.Left,
+        //     FlowDirection = FlowDirection.TopDown,
+        //     Padding = new Padding(5)
+        // };
+
+        // var calculateButton = new Button
+        // {
+        //     Text = "🔍 НАЙТИ ФУНКЦИЮ",
+        //     Size = new Size(180, 50),
+        //     BackColor = Color.FromArgb(0, 120, 215),
+        //     ForeColor = Color.White,
+        //     Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+        //     FlatStyle = FlatStyle.Flat,
+        //     Cursor = Cursors.Hand,
+        //     Margin = new Padding(0, 0, 0, 10)
+        // };
+        // calculateButton.FlatAppearance.BorderSize = 0;
+        // calculateButton.Click += CalculateButton_Click;
+
+        // chartButton = new Button
+        // {
+        //     Text = "📈 ПОСТРОИТЬ ГРАФИК",
+        //     Size = new Size(180, 50),
+        //     BackColor = Color.FromArgb(220, 220, 220),
+        //     FlatStyle = FlatStyle.Flat,
+        //     Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+        //     Enabled = false,
+        //     Cursor = Cursors.Hand
+        // };
+        // chartButton.FlatAppearance.BorderSize = 0;
+        // chartButton.Click += ChartButton_Click;
+
+        // buttonsPanel.Controls.Add(calculateButton);
+        // buttonsPanel.Controls.Add(chartButton);
+
+        // // Группа вывода результатов (справа)
+        // var resultGroupBox = new GroupBox
+        // {
+        //     Text = "Результаты анализа",
+        //     Dock = DockStyle.Fill,
+        //     Font = new Font("Segoe UI Semibold", 9F),
+        //     Padding = new Padding(10)
+        // };
+
+        // var formulaLabelTitle = new Label { Text = "Найденная зависимость (ПКМ для копирования):", Location = new Point(15, 25), AutoSize = true, ForeColor = Color.DimGray };
+
+        // functionValueLabel = new Label
+        // {
+        //     Text = "—",
+        //     Location = new Point(15, 45),
+        //     Size = new Size(800, 40),
+        //     Font = new Font("Consolas", 12F, FontStyle.Bold),
+        //     ForeColor = Color.FromArgb(0, 102, 204),
+        //     TextAlign = ContentAlignment.MiddleLeft,
+        //     Cursor = Cursors.Hand
+        // };
+
+        // // Контекстное меню для копирования формулы
+        // var copyMenu = new ContextMenuStrip();
+        // copyMenu.Items.Add("Копировать как Текст", null, (s, e) =>
+        // {
+        //     if (_functionModel != null) { Clipboard.SetText(_functionModel.ToString()); MessageBox.Show("Текст скопирован!"); }
+        // });
+        // copyMenu.Items.Add("Копировать как LaTeX", null, (s, e) =>
+        // {
+        //     if (_functionModel != null) { Clipboard.SetText(_functionModel.ToLatex()); MessageBox.Show("LaTeX скопирован!"); }
+        // });
+        // functionValueLabel.ContextMenuStrip = copyMenu;
+
+        // // Метрики в нижней части GroupBox
+        // var metricsPanel = new FlowLayoutPanel { Location = new Point(15, 90), Size = new Size(800, 30), FlowDirection = FlowDirection.LeftToRight };
+
+        // determValueLabel = new Label { Text = "R²: —", AutoSize = true, Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = Color.Green, Margin = new Padding(0, 0, 30, 0) };
+        // iterationsValueLabel = new Label { Text = "Итераций: —", AutoSize = true, Margin = new Padding(0, 0, 30, 0) };
+        // componentsValueLabel = new Label { Text = "Компонентов: —", AutoSize = true };
+
+        // metricsPanel.Controls.AddRange(new Control[] { determValueLabel, iterationsValueLabel, componentsValueLabel });
+
+        // resultGroupBox.Controls.AddRange(new Control[] { formulaLabelTitle, functionValueLabel, metricsPanel });
+
+        // bottomPanel.Controls.Add(resultGroupBox);
+        // bottomPanel.Controls.Add(buttonsPanel);
+
+        // // --- 5. СТАТУС БАР ---
+        // var statusStrip = new StatusStrip { BackColor = Color.WhiteSmoke };
+        // statusStrip.Items.Add(new ToolStripStatusLabel("Готово"));
+
+        // // --- СБОРКА ФОРМЫ ---
+        // this.Controls.Clear();
+        // this.Controls.Add(_dataGridView);
+        // this.Controls.Add(toolStrip);
+        // this.Controls.Add(menuStrip);
+        // this.Controls.Add(bottomPanel);
+        // this.Controls.Add(statusStrip);
+
+        // // События
+        // _dataGridView.DataError += _dataGridView_DataError;
+
+        // this.PerformLayout();
+    }
+
+    // Вспомогательный метод для красивых меток метрик
+    private Label CreateMetricLabel(string title, string value, Point loc, Color valColor)
+    {
+        var container = new Panel { Location = loc, Size = new Size(130, 30) };
+        var lblTitle = new Label { Text = title, AutoSize = true, ForeColor = Color.Gray, Location = new Point(0, 5) };
+        var lblValue = new Label
+        {
+            Text = value,
+            AutoSize = true,
+            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+            ForeColor = valColor,
+            Location = new Point(lblTitle.Width + 2, 3)
+        };
+        container.Controls.Add(lblTitle);
+        container.Controls.Add(lblValue);
+        this.Controls.Add(container); // Это временное добавление, на самом деле мы добавим в GroupBox
+        return lblValue;
+    }
+
+    // Метод копирования
+    private void CopyToClipboard(string format)
+    {
+        if (_functionModel == null) return;
+
+        string textToCopy = format == "latex" ? _functionModel.ToLatex() : _functionModel.ToString();
+        Clipboard.SetText(textToCopy);
+
+        MessageBox.Show($"Формула скопирована в формате {format.ToUpper()}!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void _dataGridView_CellValidating(object? sender, DataGridViewCellValidatingEventArgs e)
     {
-        // if (e.RowIndex >= 0 && e.ColumnIndex >= 0 &&
-        // !_dataGridView.Rows[e.RowIndex].IsNewRow)
-        // {
-        //     string columnName = _dataGridView.Columns[e.ColumnIndex].Name;
-        //     string value = e.FormattedValue?.ToString()?.Trim();
+        // Проверяем только ячейки данных, игнорируем заголовки и новую строку
+        if (e.RowIndex < 0 || _dataGridView.Rows[e.RowIndex].IsNewRow) return;
 
-        //     if (string.IsNullOrEmpty(value))
-        //     {
-        //         _dataGridView.Rows[e.RowIndex].ErrorText =
-        //             "Значение не может быть пустым";
-        //         e.Cancel = true;
-        //         return;
-        //     }
+        string input = e.FormattedValue.ToString().Replace(',', '.').Trim();
 
-        //     if (!double.TryParse(value, out double result))
-        //     {
-        //         _dataGridView.Rows[e.RowIndex].ErrorText =
-        //             $"В колонке '{columnName}' должно быть число";
-        //         e.Cancel = true;
-        //     }
-        //     else
-        //     {
-        //         _dataGridView.Rows[e.RowIndex].ErrorText = "";
-        //     }
-        // }
+        // Пытаемся распарсить с учетом точки или запятой
+        if (!double.TryParse(input, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out _))
+        {
+            _dataGridView.Rows[e.RowIndex].ErrorText = "Введите числовое значение (например, 12.5)";
+            e.Cancel = true; // Блокируем выход из ячейки
+
+            MessageBox.Show("Ошибка: Введено некорректное значение. Допускаются только числа.",
+                            "Ошибка ввода", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        else
+        {
+            _dataGridView.Rows[e.RowIndex].ErrorText = ""; // Очищаем ошибку, если всё ок
+        }
+
     }
 
     private void _dataGridView_DataError(object? sender, DataGridViewDataErrorEventArgs e)
@@ -366,34 +548,125 @@ public partial class Form1 : Form
 
     private void CalculateButton_Click(object? sender, EventArgs e)
     {
-        //проверки
+        SyncListsFromTable();
+
+        if (xData == null || yData == null || xData.Count == 0) return;
 
         OptimalFunctionFinder finder = new OptimalFunctionFinder(_appSettings.GetFunctionComponents());
         _statisticModels = new StatisticModels(finder.FindOptimalFunction(xData, yData, _appSettings.Tolerance));
 
         LoadResultLabel();
+        UpdateResultsTable(); // Заполняем таблицу на 2-й вкладке
+        UpdateChartDisplay(); // Рисуем график на 3-й вкладке
 
-        chartButton.Enabled = true;
+        saveChartBtn.Enabled = true;
+        // Автоматический переход на вкладку результатов
+        _tabControl.SelectedTab = _resultsTab;
+    }
+
+    private void UpdateResultsTable()
+    {
+        if (_functionModel == null) return;
+
+        DataTable dt = new DataTable();
+        // Создаем колонки X
+        for (int i = 0; i < countArgs; i++) dt.Columns.Add($"X{i + 1}", typeof(double));
+        dt.Columns.Add("Y (Исходное)", typeof(double));
+        dt.Columns.Add("f(x) (Расчетное)", typeof(double));
+        dt.Columns.Add("Невязка", typeof(double));
+
+        for (int i = 0; i < xData.Count; i++)
+        {
+            double[] xRow = xData[i].ToArray();
+            // Рассчитываем значение f(x)
+            double f_x = 0;
+            for (int j = 0; j < _functionModel.Function.Count; j++)
+                f_x += _functionModel.Function[j].Calculate(xRow, _functionModel.CoeffFunction[j]);
+
+            DataRow row = dt.NewRow();
+            for (int j = 0; j < countArgs; j++) row[j] = Math.Round(xData[i][j], 4);
+            row[countArgs] = Math.Round(yData[i], 4);
+            row[countArgs + 1] = Math.Round(f_x, 4);
+            row[countArgs + 2] = Math.Round(Math.Abs(yData[i] - f_x), 5);
+            dt.Rows.Add(row);
+        }
+
+        _resultsDataGridView.DataSource = dt;
+
+        // Обновляем метрики времени
+        timeValueLabel.Text = $"Время поиска: {_functionModel.SolveTime.ElapsedMilliseconds} мс";
+    }
+
+    private void UpdateChartDisplay()
+    {
+        if (countArgs == 1 && _functionModel != null)
+        {
+            // Создаем модель графика через ваш ChartsGenerator
+            // Примечание: Для корректной работы измените ChartsGenerator 
+            // или создайте PlotModel здесь вручную.
+
+            var title = _functionModel.ToString();
+            var model = new PlotModel { Title = "График аппроксимации", Subtitle = title, Background = OxyColors.White };
+
+            model.PlotAreaBackground = OxyColors.White;
+
+            var scatterSeries = new LineSeries
+            {
+                Title = "Исходные данные",
+                StrokeThickness = 0,
+                MarkerSize = 4,
+                MarkerType = MarkerType.Circle,
+                MarkerFill = OxyColors.Blue
+            };
+            for (int i = 0; i < xData.Count; i++) scatterSeries.Points.Add(new DataPoint(xData[i][0], yData[i]));
+
+            var lineSeries = new LineSeries { Title = "Аппроксимация", Color = OxyColors.Red };
+            double minX = xData.Min(x => x[0]);
+            double maxX = xData.Max(x => x[0]);
+            for (double x = minX; x <= maxX; x += (maxX - minX) / 100)
+            {
+                double f_x = 0;
+                for (int j = 0; j < _functionModel.Function.Count; j++)
+                    f_x += _functionModel.Function[j].Calculate(new[] { x }, _functionModel.CoeffFunction[j]);
+                lineSeries.Points.Add(new DataPoint(x, f_x));
+            }
+
+            model.Series.Add(scatterSeries);
+            model.Series.Add(lineSeries);
+            _plotView.Model = model;
+        }
     }
 
     private void LoadResultLabel()
     {
         if (_statisticModels != null)
         {
-            if (_appSettings.BestModel)
-            {
-                _functionModel = _statisticModels.GetMaxDetermModel();
-            }
-            else if (_appSettings.MostCompactThreshold)
-            {
-                _functionModel = _statisticModels.GetMostCompactEquation(_appSettings.Threshold);
-            }
+            _functionModel = _appSettings.BestModel ?
+                _statisticModels.GetMaxDetermModel() :
+                _statisticModels.GetMostCompactEquation(_appSettings.Threshold);
 
-            functionValueLabel.Text = _functionModel.ToString();
-            determValueLabel.Text = _functionModel.DeterminationCoeff.ToString();
-            iterationsValueLabel.Text = _functionModel.IterConvergence.ToString();
-            componentsValueLabel.Text = _functionModel.CountComponents.ToString();
+            if (_functionModel != null)
+            {
+                string funcText = _functionModel.ToString();
+                string r2Text = Math.Round(_functionModel.DeterminationCoeff, 5).ToString();
+                string iterText = _functionModel.IterConvergence.ToString();
+                string compText = _functionModel.CountComponents.ToString();
+                string timeText = $"{_functionModel.SolveTime.ElapsedMilliseconds} мс";
 
+                // ОБНОВЛЯЕМ ВКЛАДКУ 1
+                functionValueLabel.Text = funcText;
+                determValueLabel.Text = $"R²: {r2Text}";
+                iterationsValueLabel.Text = $"Итераций: {iterText}";
+                componentsValueLabel.Text = $"Слагаемых: {compText}";
+                timeValueLabel.Text = $"Время: {timeText}";
+
+                // ОБНОВЛЯЕМ ВКЛАДКУ 2
+                functionResValueLabel.Text = $"Функция: {funcText}";
+                determResValueLabel.Text = $"R² (детерминация): {r2Text}";
+                iterationsResValueLabel.Text = $"Количество итераций: {iterText}";
+                componentsResValueLabel.Text = $"Компонентов: {compText}";
+                timeResValueLabel.Text = $"Время поиска: {timeText}";
+            }
         }
     }
 
@@ -408,11 +681,6 @@ public partial class Form1 : Form
                 _appSettings = newSettings;
             }
         }
-    }
-
-    private void ApplySettings()
-    {
-
     }
 
     private void Form1_Load(object sender, EventArgs e)
@@ -602,18 +870,22 @@ public partial class Form1 : Form
     }
     private void _dataGridView_CellValueChanged(object? sender, DataGridViewCellEventArgs e)
     {
-        Console.WriteLine($"col : {e.ColumnIndex} - row : {e.RowIndex}");
-        if (e.ColumnIndex > -1 && e.RowIndex >= -1)
-        {
-            if (xData != null && yData != null)
-            {
-                if (e.ColumnIndex == countArgs)
-                    yData[e.RowIndex] = Convert.ToDouble(_dataGridView[e.ColumnIndex, e.RowIndex].Value);
-                else
-                    xData[e.RowIndex][e.ColumnIndex] = Convert.ToDouble(_dataGridView[e.ColumnIndex, e.RowIndex].Value);
+        if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
 
-                UpdateData();
-            }
+        // Если мы редактируем ячейку, мы должны сразу обновить значение в наших списках xData/yData
+        if (xData != null && yData != null && e.RowIndex < xData.Count)
+        {
+            var cellValue = _dataGridView[e.ColumnIndex, e.RowIndex].Value;
+            double val = 0;
+
+            // Безопасное приведение к double
+            if (cellValue != null && double.TryParse(cellValue.ToString(), out double res))
+                val = res;
+
+            if (e.ColumnIndex == countArgs) // Это колонка f(x)
+                yData[e.RowIndex] = val;
+            else
+                xData[e.RowIndex][e.ColumnIndex] = val;
         }
     }
 
@@ -701,15 +973,62 @@ public partial class Form1 : Form
 
     public void UpdateData()
     {
+        // _dataGridView.DataSource = null;
+        // _dataGridView.Columns.Clear();
+        // _dataGridView.Rows.Clear();
+
+        // DataTable newTable = CreateDataTable(xData, yData);
+
+        // _dataGridView.DataSource = newTable;
+
         _dataGridView.DataSource = null;
         _dataGridView.Columns.Clear();
-        _dataGridView.Rows.Clear();
+        
+        // Создаем новую DataTable на основе текущих xData и yData
+        _dataTable = CreateDataTable(xData, yData);
 
-        DataTable newTable = CreateDataTable(xData, yData);
+        // Отключаем события на время смены источника, чтобы не было зацикливания
+        _dataGridView.CellValueChanged -= _dataGridView_CellValueChanged;
+        _dataGridView.CellValidating -= _dataGridView_CellValidating;
 
-        _dataGridView.DataSource = newTable;
+        _dataGridView.DataSource = _dataTable;
+
+        _dataGridView.CellValueChanged += _dataGridView_CellValueChanged;
+        _dataGridView.CellValidating += _dataGridView_CellValidating;
+
+        // 6. Настраиваем внешний вид (запрет сортировки, чтобы не путать данные)
+        foreach (DataGridViewColumn column in _dataGridView.Columns)
+        {
+            column.SortMode = DataGridViewColumnSortMode.NotSortable;
+        }
+
+        // Автоматическая нумерация строк
+        foreach (DataGridViewRow row in _dataGridView.Rows)
+        {
+            row.HeaderCell.Value = (row.Index + 1).ToString();
+        }
 
         ConsolePrinter.PrintInputData(xData, yData);
+    }
+
+    private void SyncListsFromTable()
+    {
+        if (_dataGridView.DataSource is DataTable dt)
+        {
+            xData = new List<List<double>>();
+            yData = new List<double>();
+
+            foreach (DataRow row in dt.Rows)
+            {
+                List<double> xRow = new List<double>();
+                for (int i = 0; i < countArgs; i++)
+                {
+                    xRow.Add(Convert.ToDouble(row[i]));
+                }
+                xData.Add(xRow);
+                yData.Add(Convert.ToDouble(row[countArgs]));
+            }
+        }
     }
 
     public void AddRow(List<double> xValues, double yValue)

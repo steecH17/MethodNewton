@@ -17,6 +17,6 @@ namespace MethodNewton
             return Math.Pow(_decoratedFunc.Calculate(argument, coefficient), _degree);
         }
 
-        public override string ToString() => $"({_decoratedFunc})^{_degree}";
+        public override string ToString() => $"{_decoratedFunc}^{_degree}";
     }
 }

@@ -4,6 +4,10 @@
     <ProjectReference Include="..\MethodNewton\MethodNewton.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="OxyPlot.WindowsForms" Version="2.2.0" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>

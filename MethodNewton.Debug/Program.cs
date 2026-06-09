@@ -52,7 +52,7 @@ class Program
     static void TestSolutionScript2()
     {
 
-        string fileName = "Data2D.xlsx";
+        string fileName = "Data3D.xlsx";
         string dataPath = "../data/" + fileName;
 
         ExcelReader excelReader = new ExcelReader(dataPath);
@@ -74,13 +74,13 @@ class Program
         //     new CtgFunc(), new LnFunc(), new ExpFunc(), new LinearFunc(),
         //     new PowFuncDecorator(new LinearFunc(), 2), new PowFuncDecorator(new LinearFunc(), 3), new Constant()};
 
-        List<IFunction> functionComponents = new List<IFunction> {new SinFunc(), new CosFunc(),
-            new LnFunc(), new LinearFunc(), new ExpFunc(),
-            new PowFuncDecorator(new LinearFunc(), 2), new Constant()};
+        List<IFunction> functionComponents = new List<IFunction> {new SinFunc(),
+            new LinearFunc(), new ExpFunc(),
+            new Constant()};
 
         OptimalFunctionFinder finder = new OptimalFunctionFinder(functionComponents);
         StatisticModels statisticModels = new StatisticModels(finder.FindOptimalFunction(xGen, yGen, tolerance));
-        FunctionModel model = statisticModels.GetMostCompactEquation(0.96d);
+        FunctionModel model = statisticModels.GetMaxDetermModel();
 
         ConsolePrinter.PrintDataTable(model, xGen, yGen);
         Console.WriteLine($"Время поиска оптимальной функции: {finder.SearchTime.ElapsedMilliseconds} ms");
@@ -88,8 +88,8 @@ class Program
         Console.WriteLine($"Время поиска коэффициентов методом Ньютона: {model.SolveTime.ElapsedMilliseconds} ms");
         // Console.WriteLine($"Коэффициент детерминации : {Math.Round(model.DeterminationCoeff, 5)}");
 
-        ChartsGenerator chartsGenerator = new ChartsGenerator(model.Function);
-        chartsGenerator.PlotAndSave(xGen, yGen, model.CoeffFunction);
+        // ChartsGenerator chartsGenerator = new ChartsGenerator(model.Function);
+        // chartsGenerator.PlotAndSave(xGen, yGen, model.CoeffFunction);
     }
 
     static void TestSolution3D()
