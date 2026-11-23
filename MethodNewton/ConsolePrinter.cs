@@ -5,6 +5,8 @@ namespace MethodNewton
 {
     public static class ConsolePrinter
     {
+        private const int ColWidth = 12;
+
         public static void PrintInputData(List<List<double>> xData, List<double> yData)
         {
             Console.WriteLine("---INPUT DATA---");
@@ -22,23 +24,28 @@ namespace MethodNewton
             int dimension = xList[0].Count;
 
             Console.Write("\nOUTPUT DATA\n");
+
             for (int i = 0; i < dimension; i++)
             {
-                Console.Write($"x{i + 1}\t| ");
+                Console.Write($"{"x" + (i + 1),-ColWidth} | ");
             }
-            Console.Write($"Y\t| f(x)\t|\n");
+            Console.Write($"{"Y",-ColWidth} | {"f(x)",-ColWidth} |\n");
 
-            // Console.WriteLine($"--------|-------|-------|");
+            string separator = new string('-', (dimension + 2) * (ColWidth + 3));
+
             for (int i = 0; i < xList.Count; i++)
             {
                 for (int j = 0; j < dimension; j++)
                 {
-                    Console.Write($"{Math.Round(xList[i][j], 2)}\t|");
+                    Console.Write($"{Math.Round(xList[i][j], 2),-ColWidth} | ");
                 }
-                Console.Write($"{Math.Round(yList[i], 2)}\t|");
-                Console.Write($"{Math.Round(function.Calculate(xList[i].ToArray(), model.CoeffFunction), 2)}\t|\n");
+
+                double calcValue = function.Calculate(xList[i].ToArray(), model.CoeffFunction);
+                
+                Console.Write($"{Math.Round(yList[i], 2),-ColWidth} | ");
+                Console.Write($"{Math.Round(calcValue, 2),-ColWidth} |\n");
             }
-            Console.WriteLine($"------------------------|");
+            Console.WriteLine(separator);
             Console.WriteLine($"Сходимость достигнута на итерации : {model.IterConvergence}");
 
             Console.WriteLine($"Коэффициент детерминации : {Math.Round(model.DeterminationCoeff, 5)}");
@@ -54,7 +61,10 @@ namespace MethodNewton
                 if (i != 0)
                     Console.Write($"{sign}");
 
-                Console.Write($"{Math.Abs(Math.Round(coeff[i], 4))}*{function[i]}");
+                if (function[i] is Constant)
+                    Console.Write($"{Math.Abs(Math.Round(coeff[i], 4))}");
+                else
+                    Console.Write($"{Math.Abs(Math.Round(coeff[i], 4))}*{function[i]}");
             }
 
             Console.WriteLine("");

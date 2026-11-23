@@ -9,7 +9,7 @@ namespace MethodNewton
         private MathParser _parser;
         private MathExpression _function;
         private double _maxNoise;
-        private readonly List<int> sign = new List<int> { 1, -1 }; //придумать что то лучше
+        private readonly List<int> sign = new List<int> { 1, -1 };
         public DataGenerator(string expression, double maxNoise)
         {
             _parser = new MathParser();

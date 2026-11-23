@@ -21,12 +21,6 @@ namespace MethodNewton
 
         public Stopwatch SolveTime => timer;
 
-        /// <summary>
-        /// Метод для поиска коэффициентов
-        /// </summary>
-        /// <param name="x">Массив векторов аргументов. x[i] - это набор аргументов (x1, x2...) для i-го наблюдения</param>
-        /// <param name="y">Массив значений функции</param>
-        /// <param name="a">Начальное приближение коэффициентов</param>
         public Vector<double> FindCoeff(double[][] x, double[] y, Vector<double> a, double tolerance, int maxIterations)
         {
             timer.Start();
@@ -40,7 +34,7 @@ namespace MethodNewton
             int n = x.Length; // Количество наблюдений
             int m = a.Count;  // Количество коэффициентов
             double eps = 0.00001;
-            
+
             double determCoef = DeterminationCoeff(x, y, a);
 
             for (int iter = 0; iter < maxIterations; iter++)
@@ -50,21 +44,21 @@ namespace MethodNewton
 
                 for (int i = 0; i < n; i++)
                 {
-                    // Считаем невязку. Передаем ВЕСЬ вектор аргументов x[i]
+                    // невязка
                     F[i] = Residuals(x[i], a, y[i]);
 
-                    // Заполняем строку матрицы Якоби
+                    // строки матрицы Якоби
                     for (int j = 0; j < m; j++)
                     {
-                        // Считаем производную по j-му коэффициенту
-                        J[i, j] = DerivativeByCoefficient(x[i], a, j); 
+                        // производная по j-му коэффициенту
+                        J[i, j] = DerivativeByCoefficient(x[i], a, j);
                     }
                 }
 
                 Matrix<double> JTJ = J.TransposeThisAndMultiply(J);
                 Vector<double> JTF = J.TransposeThisAndMultiply(-F);
 
-                // Регуляризация (для стабильности при m > n или линейно зависимых функциях)
+                // Регуляризация
                 Matrix<double> regularized = JTJ + Matrix<double>.Build.DenseIdentity(m) * 1e-8;
 
                 Vector<double> deltaA;
@@ -74,7 +68,7 @@ namespace MethodNewton
                 }
                 catch
                 {
-                    break; 
+                    break;
                 }
 
                 a += deltaA;
@@ -104,8 +98,8 @@ namespace MethodNewton
             double ssRes = SumSquareResiduals(x, y, a);
             double ssTot = SumSquareAverage(y);
 
-            // Если дисперсия данных 0 (все y одинаковые), R2 не определен, возвращаем 1 (идеально) или 0
-            if (Math.Abs(ssTot) < 1e-9) return 1.0; 
+            // Если дисперсия данных 0 (все y одинаковые), R2 не определен, возвращаем 1
+            if (Math.Abs(ssTot) < 1e-9) return 1.0;
 
             double rSquared = 1 - (ssRes / ssTot);
 
@@ -119,7 +113,7 @@ namespace MethodNewton
         public double Function(double[] x, Vector<double> coeff)
         {
             double functionValue = 0;
-            for(int i = 0; i < _function.Count; i++)
+            for (int i = 0; i < _function.Count; i++)
             {
                 functionValue += _function[i].Calculate(x, coeff[i]);
             }
@@ -134,7 +128,7 @@ namespace MethodNewton
         private double SumSquareResiduals(double[][] x, double[] y, Vector<double> a)
         {
             double sumSquareResiduals = 0;
-            for (int i = 0; i < x.Length; i++) 
+            for (int i = 0; i < x.Length; i++)
             {
                 sumSquareResiduals += Math.Pow(y[i] - Function(x[i], a), 2);
             }

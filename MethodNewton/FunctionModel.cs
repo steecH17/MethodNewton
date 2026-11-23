@@ -52,20 +52,16 @@ namespace MethodNewton
         public string ToLatex()
         {
             string result = "f(x) = ";
-            bool isFirstVisible = true; // Флаг для отслеживания первого отображаемого элемента
+            bool isFirstVisible = true;
 
             for (int i = 0; i < _function.Count; i++)
             {
                 double c = _coeffFunction[i];
 
-                // Если коэффициент очень мал (фактически 0), пропускаем этот член
-                if (Math.Abs(c) < 1e-6) continue;
-
-                // Определяем знак
                 string sign = "";
                 if (isFirstVisible)
                 {
-                    if (c < 0) sign = "-"; // Если первое число отрицательное, ставим минус
+                    if (c < 0) sign = "-";
                 }
                 else
                 {
@@ -74,13 +70,10 @@ namespace MethodNewton
 
                 string val = Math.Abs(Math.Round(c, 4)).ToString();
 
-                // Преобразование имени функции и индексов x
                 string funcName = _function[i].ToString();
 
-                // Заменяем x1, x2... на x_{1}, x_{2}... для LaTeX
                 funcName = System.Text.RegularExpressions.Regex.Replace(funcName, @"x(\d+)", "x_{$1}");
 
-                // Оформляем математические функции
                 funcName = funcName.Replace("sin", "\\sin")
                                    .Replace("cos", "\\cos")
                                    .Replace("tg", "\\tan")
@@ -95,10 +88,9 @@ namespace MethodNewton
                 else
                     result += $"{sign}{val} \\cdot {funcName}";
 
-                isFirstVisible = false; // Последующие элементы уже не первые
+                isFirstVisible = false;
             }
 
-            // Если все коэффициенты оказались нулевыми
             if (isFirstVisible) result += "0";
 
             return result;

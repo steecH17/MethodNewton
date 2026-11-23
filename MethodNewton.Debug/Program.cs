@@ -52,20 +52,20 @@ class Program
     static void TestSolutionScript2()
     {
 
-        string fileName = "Data3D.xlsx";
-        string dataPath = "../data/" + fileName;
+        // string fileName = "Data2D.xlsx";
+        // string dataPath = "../data/" + fileName;
 
-        ExcelReader excelReader = new ExcelReader(dataPath);
-        List<List<double>> xGen = new List<List<double>>();
-        List<double> yGen = new List<double>();
-        (xGen, yGen) = excelReader.ExcelFileRead();
+        // ExcelReader excelReader = new ExcelReader(dataPath);
+        // List<List<double>> xGen = new List<List<double>>();
+        // List<double> yGen = new List<double>();
+        // (xGen, yGen) = excelReader.ExcelFileRead();
 
         double tolerance = 1e-6;
 
-        // DataGenerator dataGenerator = new DataGenerator("4*sin(x) + 2*cos(x)", 0.5);
-        // List<List<double>> xGen;
-        // List<double> yGen;
-        // (xGen, yGen) = dataGenerator.GenerateData2D(1, 30);
+        DataGenerator dataGenerator = new DataGenerator("2*sin(x) + 3*cos(x) + 6*log(x)", 0.5);
+        List<List<double>> xGen;
+        List<double> yGen;
+        (xGen, yGen) = dataGenerator.GenerateData2D(1, 100);
 
         ConsolePrinter.PrintInputData(xGen, yGen);
         Console.WriteLine($"{xGen.Count} - CountX");
@@ -74,9 +74,13 @@ class Program
         //     new CtgFunc(), new LnFunc(), new ExpFunc(), new LinearFunc(),
         //     new PowFuncDecorator(new LinearFunc(), 2), new PowFuncDecorator(new LinearFunc(), 3), new Constant()};
 
-        List<IFunction> functionComponents = new List<IFunction> {new SinFunc(),
-            new LinearFunc(), new ExpFunc(),
-            new Constant()};
+        List<IFunction> functionComponents = new List<IFunction> {new SinFunc(), new CosFunc(),
+            new LnFunc(), new ExpFunc(), new LinearFunc(),
+            new PowFuncDecorator(new LinearFunc(), 2), new PowFuncDecorator(new LinearFunc(), 3), new Constant()};
+
+        // List<IFunction> functionComponents = new List<IFunction> {new SinFunc(), new CosFunc(),
+        //     new LinearFunc(), new ExpFunc(), new PowFuncDecorator(new LinearFunc(), 2),
+        //     new LnFunc() };
 
         OptimalFunctionFinder finder = new OptimalFunctionFinder(functionComponents);
         StatisticModels statisticModels = new StatisticModels(finder.FindOptimalFunction(xGen, yGen, tolerance));
@@ -86,6 +90,9 @@ class Program
         Console.WriteLine($"Время поиска оптимальной функции: {finder.SearchTime.ElapsedMilliseconds} ms");
         ConsolePrinter.PrintFunction(model.Function, model.CoeffFunction);
         Console.WriteLine($"Время поиска коэффициентов методом Ньютона: {model.SolveTime.ElapsedMilliseconds} ms");
+
+        Console.WriteLine($"LaTeX format: {model.ToLatex()}");
+        Console.WriteLine("LaTeX format: f(x) = 0,1716 \\cdot \\cos(x_{1}) + 3,0163 \\cdot x_{1} - 2,2359 \\cdot \\x_{1}^{2} - 4,1166");
         // Console.WriteLine($"Коэффициент детерминации : {Math.Round(model.DeterminationCoeff, 5)}");
 
         // ChartsGenerator chartsGenerator = new ChartsGenerator(model.Function);
